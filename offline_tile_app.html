@@ -9,7 +9,6 @@
     <meta name="apple-mobile-web-app-title" content="타일 선택">
     <title>타일 선택 앱 - 세이타로 & 지은</title>
     <link rel="apple-touch-icon" href="https://www.gstatic.com/android/keyboard/emojikitchen/20241023/u1f49d/u1f49d_u1f496.png">
-    
     <style>
         * {
             margin: 0;
@@ -174,19 +173,10 @@
             color: #6b7280;
         }
         
-        .tile-empty:hover {
-            background: #fce7f3;
-            border-color: #f3e8ff;
-        }
-        
         .tile-selected {
             background: #ec4899;
             border-color: #ec4899;
             color: white;
-        }
-        
-        .tile-selected:hover {
-            background: #db2777;
         }
         
         .tile-name-area {
@@ -194,6 +184,18 @@
             border-color: #f59e0b;
             color: #92400e;
             cursor: not-allowed;
+        }
+        
+        /* 데스크톱에서만 호버 효과 적용 */
+        @media (hover: hover) {
+            .tile-empty:hover {
+                background: #fce7f3;
+                border-color: #f3e8ff;
+            }
+            
+            .tile-selected:hover {
+                background: #db2777;
+            }
         }
         
         .modal {
