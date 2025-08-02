@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -8,6 +9,7 @@
     <meta name="apple-mobile-web-app-title" content="타일 선택">
     <title>타일 선택 앱 - 세이타로 & 지은</title>
     <link rel="apple-touch-icon" href="https://www.gstatic.com/android/keyboard/emojikitchen/20241023/u1f49d/u1f49d_u1f496.png">
+    
     <style>
         * {
             margin: 0;
@@ -336,7 +338,8 @@
             font-weight: 500;
         }
         
-        @media (max-width: 768px) {
+        /* 모바일 세로화면 */
+        @media (max-width: 768px) and (orientation: portrait) {
             .container {
                 padding: 10px;
             }
@@ -356,6 +359,111 @@
             
             .tile {
                 font-size: 10px;
+            }
+        }
+        
+        /* 태블릿 가로화면 최적화 */
+        @media (min-width: 768px) and (orientation: landscape) {
+            .container {
+                max-width: 1400px;
+                padding: 16px;
+            }
+            
+            .main-layout {
+                display: flex;
+                gap: 24px;
+                align-items: flex-start;
+            }
+            
+            .grid-section {
+                flex: 2;
+                min-width: 0;
+            }
+            
+            .info-section {
+                flex: 1;
+                min-width: 320px;
+                max-width: 400px;
+            }
+            
+            .title {
+                font-size: 32px;
+                margin-bottom: 16px;
+            }
+            
+            .subtitle {
+                font-size: 16px;
+            }
+            
+            .grid {
+                gap: 8px;
+                max-width: 800px;
+                margin: 0 auto;
+            }
+            
+            .tile {
+                font-size: 14px;
+            }
+            
+            .form-card {
+                margin: 40px auto;
+                max-width: 500px;
+            }
+            
+            .modal-content {
+                max-width: 600px;
+            }
+            
+            .modal-large {
+                max-width: 1200px;
+            }
+            
+            .card {
+                padding: 24px;
+            }
+            
+            /* 정보 섹션 스타일링 */
+            .info-section .card {
+                position: sticky;
+                top: 20px;
+            }
+        }
+        
+        /* 아이패드 Pro 12.9" 가로화면 특별 최적화 */
+        @media (min-width: 1024px) and (orientation: landscape) {
+            .container {
+                max-width: 1600px;
+                padding: 20px;
+            }
+            
+            .grid {
+                gap: 10px;
+                max-width: 900px;
+            }
+            
+            .tile {
+                font-size: 16px;
+            }
+            
+            .title {
+                font-size: 36px;
+            }
+            
+            .info-section {
+                min-width: 360px;
+                max-width: 450px;
+            }
+        }
+        
+        /* 작은 화면에서는 세로 레이아웃 유지 */
+        @media (max-width: 768px) {
+            .main-layout {
+                display: block;
+            }
+            
+            .grid-section,
+            .info-section {
+                width: 100%;
             }
         }
     </style>
@@ -666,34 +774,40 @@
                         </p>
                     </div>
 
-                    <div class="card">
-                        <div class="grid mb-4">
-                            ${gridHTML}
-                        </div>
-                    </div>
-
-                    <div class="flex space-x-3 mb-6">
-                        <button class="btn btn-blue flex-1" onclick="state.showForm = true; render();">
-                            다른 사람 선택하기 / 他の方を選択
-                        </button>
-                        <button class="btn btn-secondary" onclick="state.showAdminPanel = true; render();">
-                            관리자 / 管理者
-                        </button>
-                    </div>
-
-                    ${getSelectedCount() > 0 ? `
-                        <div class="card">
-                            <h3 class="font-bold text-gray-800 mb-4">선택된 타일 목록 / 選択されたタイル一覧</h3>
-                            <div class="space-y-2 max-h-60 overflow-y-auto">
-                                ${Object.entries(state.selectedCells).map(([position, info]) => `
-                                    <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                                        <span class="font-medium">${info.table} - ${info.name}</span>
-                                        <span class="text-sm text-gray-600">${info.position}</span>
-                                    </div>
-                                `).join('')}
+                    <div class="main-layout">
+                        <div class="grid-section">
+                            <div class="card">
+                                <div class="grid mb-4">
+                                    ${gridHTML}
+                                </div>
                             </div>
                         </div>
-                    ` : ''}
+
+                        <div class="info-section">
+                            <div class="flex space-x-3 mb-6">
+                                <button class="btn btn-blue flex-1" onclick="state.showForm = true; render();">
+                                    다른 사람 선택하기 / 他の方を選択
+                                </button>
+                                <button class="btn btn-secondary" onclick="state.showAdminPanel = true; render();">
+                                    관리자 / 管理者
+                                </button>
+                            </div>
+
+                            ${getSelectedCount() > 0 ? `
+                                <div class="card">
+                                    <h3 class="font-bold text-gray-800 mb-4">선택된 타일 목록 / 選択されたタイル一覧</h3>
+                                    <div class="space-y-2 max-h-60 overflow-y-auto">
+                                        ${Object.entries(state.selectedCells).map(([position, info]) => `
+                                            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                                <span class="font-medium">${info.table} - ${info.name}</span>
+                                                <span class="text-sm text-gray-600">${info.position}</span>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
                 </div>
             `;
         }
