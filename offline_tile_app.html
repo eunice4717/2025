@@ -70,6 +70,27 @@
                 margin-bottom: 40px;
             }
             
+            /* 가로 레이아웃으로 공간 효율성 증대 */
+            .form-content {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 50px;
+                align-items: center;
+            }
+            
+            .form-left {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            .form-right {
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+            }
+            
             .example-photo {
                 margin-bottom: 0;
             }
@@ -105,27 +126,6 @@
             .btn {
                 padding: 16px 28px;
                 font-size: 16px;
-            }
-            
-            /* 가로 레이아웃으로 공간 효율성 증대 */
-            .form-content {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 50px;
-                align-items: center;
-            }
-            
-            .form-left {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-            }
-            
-            .form-right {
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
             }
         }
         
