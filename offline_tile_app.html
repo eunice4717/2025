@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -57,6 +56,43 @@
             text-align: center;
             color: #6b7280;
             margin-bottom: 32px;
+        }
+        
+        /* 완성 예시 사진 스타일 */
+        .example-photo {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        
+        .example-image {
+            width: 100%;
+            max-width: 350px;
+            height: auto;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            margin-bottom: 12px;
+        }
+        
+        .example-caption {
+            font-size: 14px;
+            color: #4b5563;
+            line-height: 1.5;
+        }
+        
+        .text-japanese {
+            color: #6b7280;
+            font-size: 13px;
+        }
+        
+        /* 모바일에서 예시 사진 최적화 */
+        @media (max-width: 640px) {
+            .example-image {
+                max-width: 300px;
+            }
+            
+            .example-caption {
+                font-size: 13px;
+            }
         }
         
         .form-group {
@@ -682,6 +718,16 @@
                             <p class="subtitle">세이타로 & 지은의 결혼증서 / 誠太郎と智恩の結婚証明書</p>
                         </div>
                         
+                        <!-- 완성 예시 사진 -->
+                        <div class="example-photo">
+                            <img src="./images/sample.png" alt="완성된 결혼증서 예시" class="example-image" />
+                            <p class="example-caption">
+                                여러분 한 분 한 분의 타일이 모여 아름다운 결혼증서가 완성됩니다 ✨
+                                <br />
+                                <span class="text-japanese">皆様お一人お一人のタイルが集まって美しい結婚証明書が完成されます ✨</span>
+                            </p>
+                        </div>
+                        
                         <div class="space-y-4">
                             <div class="form-group">
                                 <label class="label">테이블명 / テーブル名</label>
@@ -948,7 +994,7 @@
                             
                             <div class="mb-4">
                                 <p class="text-sm text-gray-600">
-                                    선택된 타일: ${getSelectedCount()}개 / 75개 | 選択されたタイル: ${getSelectedCount()}個 / 75個
+                                    선택된 타일: ${getSelectedCount()}개 / 75개 | 選택されたタイル: ${getSelectedCount()}個 / 75個
                                 </p>
                             </div>
 
