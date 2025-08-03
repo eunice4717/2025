@@ -54,7 +54,6 @@
             
             .container {
                 padding: 20px;
-                min-height: 100vh;
                 display: flex;
                 align-items: center;
                 justify-content: center;
@@ -714,8 +713,7 @@
         function showGridPage() {
             const app = document.getElementById('app');
             app.innerHTML = `
-                <div class="container">
-                    <div class="text-center mb-6">
+            <div class="text-center mb-6">
                         <h1 class="title">💕 타일 배치 선택 / タイル配置選択</h1>
                         <p class="text-gray-600 mb-4">
                             <span class="font-medium">${state.currentTable}</span> - <span class="font-medium">${state.currentName}</span>님
@@ -736,7 +734,7 @@
                             <span class="text-blue-600">💡 選択済みのタイル(ピンク色)を再度タッチすると選択解除されます</span>
                         </p>
                     </div>
-
+                <div class="container">
                     <div class="main-layout">
                         <div class="grid-section">
                             <div class="card">
