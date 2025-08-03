@@ -117,6 +117,7 @@
             }
             
             .select, .input {
+                min-width: 280px; /* 🆕 태블릿에서는 조금 더 작은 최소 너비 */
                 padding: 14px 18px;
                 font-size: 16px;
             }
@@ -180,6 +181,7 @@
         
         .select, .input {
             width: 100%;
+            min-width: 320px; /* 🆕 최소 너비 고정으로 드롭다운 크기 변화 방지 */
             padding: 12px 16px;
             border: 2px solid #d1d5db;
             border-radius: 8px;
@@ -419,7 +421,7 @@
         .text-yellow-600 { color: #d97706; }
         .text-yellow-800 { color: #92400e; }
         .text-gray-600 { color: #4b5563; }
-        .text-gray-800 { color: #1f2937; }
+        .text-purple-600 { color: #9333ea; }
         
         .font-medium { font-weight: 500; }
         .font-semibold { font-weight: 600; }
@@ -464,6 +466,23 @@
             justify-content: center;
             font-size: 8px;
             font-weight: 500;
+            transition: all 0.2s ease; /* 🎨 부드러운 전환 효과 */
+        }
+        
+        /* 🎨 NEW: 미니 그리드용 추가 스타일 */
+        .mini-tile.selected {
+            box-shadow: 0 2px 4px rgba(236, 72, 153, 0.3); /* 분홍색 그림자 */
+            transform: scale(1.05); /* 살짝 확대 */
+        }
+        
+        .mini-tile.empty {
+            opacity: 0.6; /* 빈 타일 투명도 */
+        }
+        
+        /* 이미 선택된 게스트 표시 스타일 */
+        .guest-already-selected {
+            color: #9ca3af !important;
+            font-style: italic;
         }
         
         /* 모바일에서는 세로 레이아웃 */
@@ -671,6 +690,105 @@
             'R4': ['김진숙 (Kim Jinsuk)', '임동명 (Im Dongmyeong)', '김진만 (Kim Jinman)', '이상분 (Lee Sangbun)', '김수아 (Kim Sua)']
         };
 
+        // 🔧 NEW: 이미 선택된 게스트들을 확인하는 함수
+        function getAlreadySelectedGuests() {
+            const selectedGuests = new Set();
+            Object.values(state.selectedCells).forEach(cell => {
+                selectedGuests.add(cell.name);
+            });
+            return selectedGuests;
+        }
+
+        // 🆕 NEW: 페이지 헤더의 사용자 정보를 업데이트하는 함수
+        function updatePageHeader() {
+            const headerUserInfo = document.querySelector('.text-gray-600 .font-medium');
+            if (headerUserInfo && headerUserInfo.parentNode) {
+                const tableSpan = headerUserInfo.parentNode.querySelector('.font-medium:first-child');
+                const nameSpan = headerUserInfo.parentNode.querySelector('.font-medium:last-child');
+                
+                if (tableSpan && nameSpan) {
+                    tableSpan.textContent = state.currentTable;
+                    nameSpan.textContent = state.currentName;
+                }
+            }
+        }
+        function getCurrentUserTilePosition(guestName) {
+            for (const [position, info] of Object.entries(state.selectedCells)) {
+                if (info.name === guestName) {
+                    return position;
+                }
+            }
+            return null;
+        }
+
+        // 🆕 NEW: 현재 사용자의 기존 타일을 해제하는 함수
+        function removeCurrentUserTile(guestName) {
+            const existingPosition = getCurrentUserTilePosition(guestName);
+            if (existingPosition) {
+                delete state.selectedCells[existingPosition];
+                return existingPosition;
+            }
+            return null;
+        }
+
+        // 🔧 MODIFIED: 테이블별로 사용 가능한 게스트만 반환하는 함수
+        function getAvailableGuestsForTable(tableName) {
+            if (!tableGuests[tableName]) return [];
+            
+            const allGuests = tableGuests[tableName];
+            const selectedGuests = getAlreadySelectedGuests();
+            
+            return allGuests.filter(guest => !selectedGuests.has(guest));
+        }
+
+        // 🔧 MODIFIED: 이름 드롭다운을 업데이트하는 함수
+        function updateNameDropdown(selectedTable) {
+            const nameSelect = document.getElementById('nameSelect');
+            const nextBtn = document.getElementById('nextBtn');
+            
+            // 기본 옵션 설정
+            nameSelect.innerHTML = '<option value="">성함을 선택해주세요 / お名前を選択してください</option>';
+            nameSelect.disabled = !selectedTable;
+            nextBtn.disabled = true;
+            state.currentName = '';
+
+            if (selectedTable && tableGuests[selectedTable]) {
+                const availableGuests = getAvailableGuestsForTable(selectedTable);
+                const allGuests = tableGuests[selectedTable];
+                const selectedGuests = getAlreadySelectedGuests();
+
+                // 사용 가능한 게스트와 이미 선택된 게스트를 구분해서 표시
+                allGuests.forEach(guest => {
+                    const option = document.createElement('option');
+                    option.value = guest;
+                    
+                    if (selectedGuests.has(guest)) {
+                        // 이미 선택된 게스트는 비활성화하고 표시
+                        option.textContent = `${guest} (이미 선택됨 / 選択済み)`;
+                        option.disabled = true;
+                        option.className = 'guest-already-selected';
+                    } else {
+                        // 선택 가능한 게스트
+                        option.textContent = guest;
+                    }
+                    
+                    nameSelect.appendChild(option);
+                });
+
+                nameSelect.disabled = false;
+
+                // 사용 가능한 게스트가 없는 경우 메시지 표시
+                if (availableGuests.length === 0) {
+                    const noGuestOption = document.createElement('option');
+                    noGuestOption.textContent = '이 테이블의 모든 게스트가 선택을 완료했습니다 / このテーブルの全ゲストが選択完了';
+                    noGuestOption.disabled = true;
+                    noGuestOption.style.color = '#ef4444';
+                    noGuestOption.style.fontWeight = 'bold';
+                    nameSelect.appendChild(noGuestOption);
+                }
+            }
+        }
+
         // 이벤트 리스너 설정
         document.addEventListener('DOMContentLoaded', function() {
             const tableSelect = document.getElementById('tableSelect');
@@ -681,23 +799,7 @@
             tableSelect.addEventListener('change', function() {
                 const selectedTable = this.value;
                 state.currentTable = selectedTable;
-                state.currentName = '';
-
-                // 이름 선택 초기화
-                nameSelect.innerHTML = '<option value="">성함을 선택해주세요 / お名前を選択してください</option>';
-                nameSelect.disabled = !selectedTable;
-                nextBtn.disabled = true;
-
-                if (selectedTable && tableGuests[selectedTable]) {
-                    // 해당 테이블의 게스트 목록 추가
-                    tableGuests[selectedTable].forEach(guest => {
-                        const option = document.createElement('option');
-                        option.value = guest;
-                        option.textContent = guest;
-                        nameSelect.appendChild(option);
-                    });
-                    nameSelect.disabled = false;
-                }
+                updateNameDropdown(selectedTable); // 🔧 MODIFIED: 새로운 함수 사용
             });
 
             // 이름 선택 변경
@@ -714,6 +816,12 @@
             });
 
             loadFromStorage();
+            // 🔧 FIX: setTimeout을 사용해 DOM이 완전히 로드된 후 실행
+            setTimeout(() => {
+                if (typeof updateTableDropdown === 'function') {
+                    updateTableDropdown();
+                }
+            }, 100);
         });
 
         function showGridPage() {
@@ -729,15 +837,19 @@
                         <p class="text-sm text-gray-600">
                             선택된 타일: <span id="selectedCount">0</span>개 / 75개 | 원하는 위치를 터치해주세요
                             <br />
-                            選択されたタイル: <span id="selectedCountJp">0</span>個 / 75個 | ご희望の位置をタッチしてください
+                            選択されたタイル: <span id="selectedCountJp">0</span>個 / 75個 | ご希望の位置をタッチしてください
                             <br />
                             <span class="text-yellow-600">💕 골드 영역은 신랑신부 이름이 들어갈 특별한 공간입니다</span>
                             <br />
-                            <span class="text-yellow-600">💕 ゴールド領域は新郎新婦のお名前が入る特별なスペースです</span>
+                            <span class="text-yellow-600">💕 ゴールド領域は新郎新婦のお名前が入る特別なスペースです</span>
                             <br />
                             <span class="text-blue-600">💡 이미 선택된 타일(분홍색)을 다시 터치하면 선택 해제됩니다</span>
                             <br />
                             <span class="text-blue-600">💡 選択済みのタイル(ピンク色)を再度タッチすると選択解除されます</span>
+                            <br />
+                            <span class="text-purple-600">⭐ 한 분당 최대 1개의 타일만 선택 가능합니다</span>
+                            <br />
+                            <span class="text-purple-600">⭐ お一人様最大1個のタイルのみ選択可能です</span>
                         </p>
                     </div>
 
@@ -839,38 +951,90 @@
 
         function handleCellClick(row, col) {
             const cellKey = `${row}-${col}`;
+            const existingSelection = state.selectedCells[cellKey];
 
-            if (state.selectedCells[cellKey]) {
+            // 🔧 CASE 1: 이미 선택된 타일을 클릭한 경우
+            if (existingSelection) {
+                // 다른 사람이 선택한 타일인 경우
+                if (existingSelection.name !== state.currentName) {
+                    alert(`이 타일은 ${existingSelection.name}님이 이미 선택했습니다. / このタイルは${existingSelection.name}様が既に選択されています。`);
+                    return;
+                }
+
+                // 자신이 선택한 타일인 경우 - 해제 확인
                 state.cellToRemove = { 
                     key: cellKey, 
-                    info: state.selectedCells[cellKey], 
+                    info: existingSelection, 
                     row: row + 1, 
-                    col: col + 1 
+                    col: col + 1,
+                    fromUserAction: true // 🆕 사용자가 직접 클릭한 해제인지 표시
                 };
                 state.showRemoveConfirm = true;
                 renderModals();
                 return;
             }
 
-            state.selectedCells[cellKey] = {
-                table: state.currentTable,
-                name: state.currentName,
-                position: `${row + 1}행 ${col + 1}열`
-            };
+            // 🆕 CASE 2: 빈 타일을 선택한 경우
+            // 현재 사용자가 이미 다른 타일을 선택했는지 확인
+            const currentUserPosition = getCurrentUserTilePosition(state.currentName);
+            
+            if (currentUserPosition) {
+                // 🆕 이미 선택한 타일이 있는 경우 - 교체 확인
+                const [existingRow, existingCol] = currentUserPosition.split('-').map(Number);
+                const existingInfo = state.selectedCells[currentUserPosition];
+                
+                const confirmMessage = `이미 ${existingRow + 1}행 ${existingCol + 1}열에 타일을 선택하셨습니다.\n새로운 위치 ${row + 1}행 ${col + 1}열로 이동하시겠습니까?\n\n既に${existingRow + 1}行${existingCol + 1}列にタイルを選択されています。\n新しい位置${row + 1}行${col + 1}列に移動しますか？`;
+                
+                if (confirm(confirmMessage)) {
+                    // 기존 타일 제거하고 새 위치에 선택
+                    removeCurrentUserTile(state.currentName);
+                    
+                    state.selectedCells[cellKey] = {
+                        table: state.currentTable,
+                        name: state.currentName,
+                        position: `${row + 1}행 ${col + 1}열`
+                    };
 
-            saveToStorage();
-            alert(`${state.currentName}님의 타일이 ${row + 1}행 ${col + 1}열에 배치되었습니다! 🎉`);
-            renderGrid();
-            updateSelectedTilesList();
+                    saveToStorage();
+                    alert(`${state.currentName}님의 타일이 ${row + 1}행 ${col + 1}열로 이동되었습니다! 🎉\n${state.currentName}様のタイルが${row + 1}行${col + 1}列に移動されました！🎉`);
+                    renderGrid();
+                    updateSelectedTilesList();
+                    // 🔧 FIX: 안전하게 함수 호출
+                    if (typeof updateTableDropdown === 'function') {
+                        updateTableDropdown();
+                    }
+                }
+            } else {
+                // 🆕 첫 번째 타일 선택인 경우
+                state.selectedCells[cellKey] = {
+                    table: state.currentTable,
+                    name: state.currentName,
+                    position: `${row + 1}행 ${col + 1}열`
+                };
+
+                saveToStorage();
+                alert(`${state.currentName}님의 타일이 ${row + 1}행 ${col + 1}열에 배치되었습니다! 🎉\n${state.currentName}様のタイルが${row + 1}行${col + 1}列に配置されました！🎉`);
+                renderGrid();
+                updateSelectedTilesList();
+                // 🔧 FIX: 안전하게 함수 호출
+                if (typeof updateTableDropdown === 'function') {
+                    updateTableDropdown();
+                }
+            }
         }
 
         function confirmRemoveTile() {
             if (state.cellToRemove) {
                 const removedTileInfo = state.cellToRemove.info;
-                state.currentTable = removedTileInfo.table;
-                state.currentName = removedTileInfo.name;
-
+                
                 delete state.selectedCells[state.cellToRemove.key];
+                
+                // 🔧 FIX: 관리자 패널에서 삭제할 때는 현재 사용자 정보를 변경하지 않음
+                // 개별 타일 해제할 때만 해당 사용자로 변경
+                if (state.cellToRemove.fromUserAction) {
+                    state.currentTable = removedTileInfo.table;
+                    state.currentName = removedTileInfo.name;
+                }
                 
                 state.cellToRemove = null;
                 state.showRemoveConfirm = false;
@@ -879,6 +1043,11 @@
                 saveToStorage();
                 renderGrid();
                 updateSelectedTilesList();
+                updatePageHeader(); // 🆕 헤더 업데이트 함수 호출
+                // 🔧 FIX: 안전하게 함수 호출
+                if (typeof updateTableDropdown === 'function') {
+                    updateTableDropdown();
+                }
                 renderModals();
             }
         }
@@ -895,6 +1064,10 @@
             state.showResetConfirm = false;
             renderGrid();
             updateSelectedTilesList();
+            // 🔧 FIX: 안전하게 함수 호출
+            if (typeof updateTableDropdown === 'function') {
+                updateTableDropdown();
+            }
             renderModals();
         }
 
@@ -924,6 +1097,10 @@
                     alert('백업 파일이 성공적으로 복원되었습니다! / バックアップファイルが正常に復元されました！');
                     renderGrid();
                     updateSelectedTilesList();
+                    // 🔧 FIX: 안전하게 함수 호출
+                    if (typeof updateTableDropdown === 'function') {
+                        updateTableDropdown();
+                    }
                 } catch (error) {
                     alert('백업 파일을 읽는데 실패했습니다. / バックアップファイルの読み込みに失敗しました。');
                 }
@@ -1001,23 +1178,31 @@
                                         <p class="text-sm text-yellow-600 mb-3">선택된 타일: ${getSelectedCount()}개</p>
                                         <div class="space-y-2 max-h-60 overflow-y-auto">
                                             ${Object.entries(state.selectedCells).map(([position, info]) => `
-                                                <div class="flex justify-between items-center p-2 bg-white border rounded">
+                                                <div class="flex justify-between items-center p-3 bg-gradient-to-r from-pink-50 to-purple-50 border border-pink-200 rounded-lg shadow-sm">
                                                     <div class="flex-1">
-                                                        <span class="font-medium text-sm">${info.table} - ${info.name}</span>
-                                                        <span class="text-xs text-gray-600 ml-2">(${info.position})</span>
+                                                        <div class="flex items-center gap-2 mb-1">
+                                                            <div class="w-3 h-3 bg-pink-500 rounded-full"></div>
+                                                            <span class="font-semibold text-gray-800 text-sm">${info.table}</span>
+                                                            <span class="text-gray-500">-</span>
+                                                            <span class="font-medium text-gray-700 text-sm">${info.name}</span>
+                                                        </div>
+                                                        <div class="flex items-center gap-1 ml-5">
+                                                            <span class="text-xs text-pink-600 bg-pink-100 px-2 py-1 rounded-full font-medium">${info.position}</span>
+                                                        </div>
                                                     </div>
-                                                    <button class="btn btn-danger text-xs" onclick="
+                                                    <button class="btn btn-danger text-xs ml-3" onclick="
                                                         state.cellToRemove = { 
                                                             key: '${position}', 
                                                             info: ${JSON.stringify(info).replace(/"/g, '&quot;')}, 
                                                             row: ${parseInt(position.split('-')[0]) + 1}, 
-                                                            col: ${parseInt(position.split('-')[1]) + 1} 
+                                                            col: ${parseInt(position.split('-')[1]) + 1},
+                                                            fromUserAction: false
                                                         };
                                                         state.showAdminPanel = false;
                                                         state.showRemoveConfirm = true;
                                                         renderModals();
                                                     ">
-                                                        삭제
+                                                        🗑️ 삭제
                                                     </button>
                                                 </div>
                                             `).join('')}
@@ -1056,20 +1241,20 @@
                             tileClass += 'bg-yellow-300 border-yellow-500 text-yellow-800';
                             content = row === 7 && col === 7 ? '💕' : '';
                         } else if (isSelected) {
-                            tileClass += 'bg-pink-500 border-pink-500 text-white';
+                            tileClass += 'bg-pink-500 border-pink-600 text-white shadow-lg'; // 🎨 더 진한 분홍색과 그림자 추가
                             const name = /[川河村高藤口]/.test(isSelected.name) 
                                 ? isSelected.name.split(' (')[0]
                                 : isSelected.name.split(' ')[0];
                             content = `<div style="text-align: center; line-height: 1;">
                                 <div style="font-weight: bold; font-size: 6px;">${name}</div>
-                                <div style="font-size: 4px; opacity: 0.8;">${isSelected.table}</div>
+                                <div style="font-size: 4px; opacity: 0.9;">${isSelected.table}</div>
                             </div>`;
                         } else {
-                            tileClass += 'bg-white border-gray-300 text-gray-500';
-                            content = `${row + 1}-${col + 1}`;
+                            tileClass += 'bg-gray-100 border-gray-300 text-gray-400'; // 🎨 더 연한 회색으로 변경
+                            content = `<span style="font-size: 6px; opacity: 0.7;">${row + 1}-${col + 1}</span>`; // 🎨 더 작고 연하게
                         }
                         
-                        miniGridHTML += `<div class="${tileClass}" title="${isSelected ? `${isSelected.name} (${isSelected.table})` : `${row + 1}행 ${col + 1}열`}">${content}</div>`;
+                        miniGridHTML += `<div class="${tileClass}${isSelected ? ' selected' : ' empty'}" title="${isSelected ? `${isSelected.name} (${isSelected.table})` : `${row + 1}행 ${col + 1}열`}">${content}</div>`;
                     }
                 }
 
@@ -1077,6 +1262,25 @@
                     <div class="modal">
                         <div class="modal-content modal-large">
                             <h3 class="font-bold text-gray-800 mb-4">📊 전체 타일 현황 / 全体タイル状況</h3>
+                            
+                            <!-- 🎨 NEW: 범례 추가 -->
+                            <div class="mb-4 p-3 bg-gray-50 rounded-lg">
+                                <h4 class="font-semibold text-gray-700 mb-2 text-sm">범례 / 凡例</h4>
+                                <div class="flex flex-wrap gap-4 text-xs">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-4 h-4 bg-pink-500 border border-pink-600 rounded shadow-sm"></div>
+                                        <span class="text-gray-600">선택된 타일 / 選択済み</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-4 h-4 bg-gray-100 border border-gray-300 rounded"></div>
+                                        <span class="text-gray-600">빈 타일 / 空きタイル</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-4 h-4 bg-yellow-300 border border-yellow-500 rounded"></div>
+                                        <span class="text-gray-600">신랑신부 영역 / 新郎新婦エリア</span>
+                                    </div>
+                                </div>
+                            </div>
                             
                             <div class="mb-4">
                                 <p class="text-sm text-gray-600">
