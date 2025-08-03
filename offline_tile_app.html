@@ -54,6 +54,7 @@
             
             .container {
                 padding: 20px;
+                min-height: 100vh;
                 display: flex;
                 align-items: center;
                 justify-content: center;
@@ -344,7 +345,7 @@
         .mb-2 { margin-bottom: 8px; }
         .mb-3 { margin-bottom: 12px; }
         .mb-4 { margin-bottom: 16px; }
-        .mb-6 { margin-bottom: 24px;
+        .mb-6 { margin-bottom: 24px; 
                 margin-top: 30px; }
         .mt-4 { margin-top: 16px; }
         .mt-6 { margin-top: 24px; }
@@ -637,7 +638,12 @@
             selectedCells: {},
             currentTable: '',
             currentName: '',
-            showForm: true
+            showForm: true,
+            showResetConfirm: false,
+            showRemoveConfirm: false,
+            cellToRemove: null,
+            showAdminPanel: false,
+            showOverview: false
         };
 
         const STORAGE_KEY = 'tile_selection_data';
@@ -714,7 +720,7 @@
         function showGridPage() {
             const app = document.getElementById('app');
             app.innerHTML = `
-            <div class="text-center mb-6">
+             <div class="text-center mb-6">
                         <h1 class="title">💕 타일 배치 선택 / タイル配置選択</h1>
                         <p class="text-gray-600 mb-4">
                             <span class="font-medium">${state.currentTable}</span> - <span class="font-medium">${state.currentName}</span>님
@@ -735,6 +741,7 @@
                             <span class="text-blue-600">💡 選択済みのタイル(ピンク色)を再度タッチすると選択解除されます</span>
                         </p>
                     </div>
+
                 <div class="container">
                     <div class="main-layout">
                         <div class="grid-section">
@@ -749,7 +756,7 @@
                                 <button class="btn btn-blue flex-1" onclick="showFormPage()">
                                     다른 사람 선택하기 / 他の方を選択
                                 </button>
-                                <button class="btn btn-secondary" onclick="alert('관리자 기능은 추후 업데이트 예정입니다.')">
+                                <button class="btn btn-secondary" onclick="state.showAdminPanel = true; renderModals();">
                                     관리자 / 管理者
                                 </button>
                             </div>
@@ -767,6 +774,7 @@
 
             renderGrid();
             updateSelectedTilesList();
+            renderModals();
         }
 
         function showFormPage() {
@@ -834,12 +842,14 @@
             const cellKey = `${row}-${col}`;
 
             if (state.selectedCells[cellKey]) {
-                if (confirm('이미 선택된 타일입니다. 해제하시겠습니까?')) {
-                    delete state.selectedCells[cellKey];
-                    saveToStorage();
-                    renderGrid();
-                    updateSelectedTilesList();
-                }
+                state.cellToRemove = { 
+                    key: cellKey, 
+                    info: state.selectedCells[cellKey], 
+                    row: row + 1, 
+                    col: col + 1 
+                };
+                state.showRemoveConfirm = true;
+                renderModals();
                 return;
             }
 
@@ -853,6 +863,319 @@
             alert(`${state.currentName}님의 타일이 ${row + 1}행 ${col + 1}열에 배치되었습니다! 🎉`);
             renderGrid();
             updateSelectedTilesList();
+        }
+
+        function confirmRemoveTile() {
+            if (state.cellToRemove) {
+                const removedTileInfo = state.cellToRemove.info;
+                state.currentTable = removedTileInfo.table;
+                state.currentName = removedTileInfo.name;
+
+                delete state.selectedCells[state.cellToRemove.key];
+                
+                state.cellToRemove = null;
+                state.showRemoveConfirm = false;
+                state.showForm = false;
+                
+                saveToStorage();
+                renderGrid();
+                updateSelectedTilesList();
+                renderModals();
+            }
+        }
+
+        function cancelRemoveTile() {
+            state.cellToRemove = null;
+            state.showRemoveConfirm = false;
+            renderModals();
+        }
+
+        function resetSelection() {
+            state.selectedCells = {};
+            localStorage.removeItem(STORAGE_KEY);
+            state.showResetConfirm = false;
+            renderGrid();
+            updateSelectedTilesList();
+            renderModals();
+        }
+
+        function downloadBackup() {
+            const dataStr = JSON.stringify(state.selectedCells, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `tile_selection_backup_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    state.selectedCells = data;
+                    saveToStorage();
+                    alert('백업 파일이 성공적으로 복원되었습니다! / バックアップファイルが正常に復元されました！');
+                    renderGrid();
+                    updateSelectedTilesList();
+                } catch (error) {
+                    alert('백업 파일을 읽는데 실패했습니다. / バックアップファイルの読み込みに失敗しました。');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        function isNameArea(row, col) {
+            return row >= 5 && col >= 5;
+        }
+
+        function getSelectedCount() {
+            return Object.keys(state.selectedCells).length;
+        }
+
+        function renderModals() {
+            // 기존 모달 제거
+            const existingModal = document.querySelector('.modal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+
+            let modalsHTML = '';
+
+            // 관리자 패널
+            if (state.showAdminPanel) {
+                modalsHTML = `
+                    <div class="modal">
+                        <div class="modal-content">
+                            <h3 class="font-bold text-gray-800 mb-4">⚙️ 관리자 패널 / 管理者パネル</h3>
+                            
+                            <div class="space-y-4">
+                                <div class="p-4 bg-green-50 border border-green-200 rounded-lg">
+                                    <h4 class="font-semibold text-green-800 mb-2">💾 데이터 백업/복원 / データバックアップ・復元</h4>
+                                    <p class="text-sm text-green-600 mb-3">데이터를 파일로 저장하거나 복원합니다.</p>
+                                    <div class="flex space-x-3">
+                                        <button class="btn btn-green text-sm" onclick="downloadBackup()">
+                                            💾 백업 / バックアップ
+                                        </button>
+                                        <label class="btn btn-blue text-sm" style="cursor: pointer;">
+                                            📤 복원 / 復元
+                                            <input type="file" accept=".json" onchange="handleFileUpload(event)" style="display: none;" />
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                    <h4 class="font-semibold text-blue-800 mb-2">📊 전체 현황 보기 / 全体状況確認</h4>
+                                    <p class="text-sm text-blue-600 mb-3">선택된 모든 타일을 그리드에서 확인합니다.</p>
+                                    <button class="btn btn-blue" onclick="state.showAdminPanel = false; state.showOverview = true; renderModals();">
+                                        현황 보기 / 状況確認
+                                    </button>
+                                </div>
+                                
+                                <div class="p-4 bg-red-50 border border-red-200 rounded-lg">
+                                    <h4 class="font-semibold text-red-800 mb-2">🗑️ 전체 초기화 / 全体初期化</h4>
+                                    <p class="text-sm text-red-600 mb-3">모든 선택된 타일을 삭제합니다.</p>
+                                    <button class="btn btn-danger" onclick="
+                                        if (${getSelectedCount()} === 0) {
+                                            alert('초기화할 데이터가 없습니다.');
+                                            return;
+                                        }
+                                        state.showAdminPanel = false; 
+                                        state.showResetConfirm = true; 
+                                        renderModals();
+                                    ">
+                                        전체 초기화 / 全体初期化
+                                    </button>
+                                </div>
+                                
+                                ${getSelectedCount() > 0 ? `
+                                    <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                        <h4 class="font-semibold text-yellow-800 mb-2">📝 개별 타일 삭제 / 個別タイル削除</h4>
+                                        <p class="text-sm text-yellow-600 mb-3">선택된 타일: ${getSelectedCount()}개</p>
+                                        <div class="space-y-2 max-h-60 overflow-y-auto">
+                                            ${Object.entries(state.selectedCells).map(([position, info]) => `
+                                                <div class="flex justify-between items-center p-2 bg-white border rounded">
+                                                    <div class="flex-1">
+                                                        <span class="font-medium text-sm">${info.table} - ${info.name}</span>
+                                                        <span class="text-xs text-gray-600 ml-2">(${info.position})</span>
+                                                    </div>
+                                                    <button class="btn btn-danger text-xs" onclick="
+                                                        state.cellToRemove = { 
+                                                            key: '${position}', 
+                                                            info: ${JSON.stringify(info).replace(/"/g, '&quot;')}, 
+                                                            row: ${parseInt(position.split('-')[0]) + 1}, 
+                                                            col: ${parseInt(position.split('-')[1]) + 1} 
+                                                        };
+                                                        state.showAdminPanel = false;
+                                                        state.showRemoveConfirm = true;
+                                                        renderModals();
+                                                    ">
+                                                        삭제
+                                                    </button>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                ` : `
+                                    <div class="p-4 bg-gray-50 border rounded-lg">
+                                        <p class="text-gray-600 text-center">선택된 타일이 없습니다. / 選択されたタイルがありません。</p>
+                                    </div>
+                                `}
+                            </div>
+                            
+                            <div class="mt-6">
+                                <button class="btn btn-secondary w-full" onclick="state.showAdminPanel = false; renderModals();">
+                                    닫기 / 閉じる
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 현황 보기 모달
+            if (state.showOverview) {
+                let miniGridHTML = '';
+                for (let row = 0; row < 10; row++) {
+                    for (let col = 0; col < 10; col++) {
+                        const cellKey = `${row}-${col}`;
+                        const isSelected = state.selectedCells[cellKey];
+                        const isNameZone = isNameArea(row, col);
+                        
+                        let tileClass = 'mini-tile ';
+                        let content = '';
+                        
+                        if (isNameZone) {
+                            tileClass += 'bg-yellow-300 border-yellow-500 text-yellow-800';
+                            content = row === 7 && col === 7 ? '💕' : '';
+                        } else if (isSelected) {
+                            tileClass += 'bg-pink-500 border-pink-500 text-white';
+                            const name = /[川河村高藤口]/.test(isSelected.name) 
+                                ? isSelected.name.split(' (')[0]
+                                : isSelected.name.split(' ')[0];
+                            content = `<div style="text-align: center; line-height: 1;">
+                                <div style="font-weight: bold; font-size: 6px;">${name}</div>
+                                <div style="font-size: 4px; opacity: 0.8;">${isSelected.table}</div>
+                            </div>`;
+                        } else {
+                            tileClass += 'bg-white border-gray-300 text-gray-500';
+                            content = `${row + 1}-${col + 1}`;
+                        }
+                        
+                        miniGridHTML += `<div class="${tileClass}" title="${isSelected ? `${isSelected.name} (${isSelected.table})` : `${row + 1}행 ${col + 1}열`}">${content}</div>`;
+                    }
+                }
+
+                modalsHTML = `
+                    <div class="modal">
+                        <div class="modal-content modal-large">
+                            <h3 class="font-bold text-gray-800 mb-4">📊 전체 타일 현황 / 全体タイル状況</h3>
+                            
+                            <div class="mb-4">
+                                <p class="text-sm text-gray-600">
+                                    선택된 타일: ${getSelectedCount()}개 / 75개 | 選択されたタイル: ${getSelectedCount()}個 / 75個
+                                </p>
+                            </div>
+
+                            <div class="bg-gray-50 p-4 rounded-lg mb-4">
+                                <div class="mini-grid">
+                                    ${miniGridHTML}
+                                </div>
+                            </div>
+
+                            ${getSelectedCount() > 0 ? `
+                                <div class="mb-4">
+                                    <h4 class="font-semibold text-gray-800 mb-3">상세 선택 리스트 / 詳細選択リスト</h4>
+                                    <div class="space-y-2 max-h-60 overflow-y-auto">
+                                        ${Object.entries(state.selectedCells)
+                                            .sort((a, b) => a[1].position.localeCompare(b[1].position))
+                                            .map(([position, info]) => `
+                                            <div class="flex justify-between items-center p-2 bg-gray-100 rounded text-sm">
+                                                <span class="font-medium">${info.position}</span>
+                                                <span class="text-gray-600">${info.table} - ${info.name}</span>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            ` : ''}
+
+                            <button class="btn btn-secondary w-full" onclick="state.showOverview = false; renderModals();">
+                                닫기 / 閉じる
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 타일 제거 확인 모달
+            if (state.showRemoveConfirm && state.cellToRemove) {
+                modalsHTML = `
+                    <div class="modal">
+                        <div class="modal-content">
+                            <h3 class="font-bold text-gray-800 mb-3">🗑️ 타일 선택 해제 / タイル選択解除</h3>
+                            <p class="text-gray-600 mb-6">
+                                <span class="font-medium">${state.cellToRemove.info.name}</span>님이 선택한
+                                <br />
+                                <span class="font-medium">${state.cellToRemove.row}행 ${state.cellToRemove.col}열</span> 타일을 해제하시겠습니까?
+                                <br />
+                                <span class="font-medium">${state.cellToRemove.info.name}</span>様が選択した
+                                <br />
+                                <span class="font-medium">${state.cellToRemove.row}行 ${state.cellToRemove.col}列</span> のタイルを解除しますか？
+                                <br />
+                                <span class="text-blue-600 text-sm mt-2" style="display: block;">💡 해제 후 바로 다른 위치를 선택할 수 있습니다</span>
+                                <br />
+                                <span class="text-blue-600 text-sm">💡 解除後すぐに他の位置を選択できます</span>
+                            </p>
+                            <div class="flex space-x-3">
+                                <button class="btn btn-secondary flex-1" onclick="cancelRemoveTile()">
+                                    취소 / キャンセル
+                                </button>
+                                <button class="btn btn-danger flex-1" onclick="confirmRemoveTile()">
+                                    해제 / 解除
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 전체 초기화 확인 모달
+            if (state.showResetConfirm) {
+                modalsHTML = `
+                    <div class="modal">
+                        <div class="modal-content">
+                            <h3 class="font-bold text-gray-800 mb-3">⚠️ 전체 초기화 / 全体初期化</h3>
+                            <p class="text-gray-600 mb-6">
+                                정말로 모든 선택을 초기화하시겠습니까?
+                                <br />
+                                本当にすべての選択を初期化しますか？
+                                <br />
+                                <span class="text-red-600 font-medium">이 작업은 되돌릴 수 없습니다. / この作業は元に戻せません。</span>
+                            </p>
+                            <div class="flex space-x-3">
+                                <button class="btn btn-secondary flex-1" onclick="state.showResetConfirm = false; renderModals();">
+                                    취소 / キャンセル
+                                </button>
+                                <button class="btn btn-danger flex-1" onclick="resetSelection()">
+                                    초기화 / 初期化
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (modalsHTML) {
+                document.body.insertAdjacentHTML('beforeend', modalsHTML);
+            }
         }
 
         function saveToStorage() {
