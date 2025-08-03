@@ -47,8 +47,8 @@
         /* 아이패드 최적화 */
         @media (min-width: 768px) and (max-width: 1024px) {
             .form-card {
-                max-width: 700px;
-                margin: 40px auto;
+                max-width: 900px;
+                margin: 20px auto;
                 padding: 40px;
             }
             
@@ -71,23 +71,25 @@
             }
             
             .example-photo {
-                margin-bottom: 40px;
+                margin-bottom: 0;
             }
             
             .example-image {
-                max-width: 400px;
+                max-width: 380px;
+                width: 100%;
             }
             
             .example-caption {
-                font-size: 16px;
+                font-size: 14px;
+                margin-top: 16px;
             }
             
             .text-japanese {
-                font-size: 15px;
+                font-size: 13px;
             }
             
             .form-group {
-                margin-bottom: 28px;
+                margin-bottom: 24px;
             }
             
             .label {
@@ -97,19 +99,19 @@
             
             .select, .input {
                 padding: 14px 18px;
-                font-size: 18px;
+                font-size: 16px;
             }
             
             .btn {
                 padding: 16px 28px;
-                font-size: 18px;
+                font-size: 16px;
             }
             
             /* 가로 레이아웃으로 공간 효율성 증대 */
             .form-content {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
-                gap: 40px;
+                gap: 50px;
                 align-items: center;
             }
             
@@ -117,11 +119,13 @@
                 display: flex;
                 flex-direction: column;
                 align-items: center;
+                justify-content: center;
             }
             
             .form-right {
                 display: flex;
                 flex-direction: column;
+                justify-content: center;
             }
         }
         
@@ -662,11 +666,30 @@
         }
 
         function getAvailableTables() {
-            const tableOrder = ['A', 'B', 'C', 'D', 'E', 'A1', 'A2', 'A3', 'B1', 'B2', 'B4', 'B5', 'C1', 'C2', 'C3', 'C4', 'C5', 'R2', 'R3', 'R4'];
+            const yamaguchi = ['A', 'B', 'C', 'D', 'E'];
+            const seoul = ['A1', 'A2', 'A3', 'B1', 'B2', 'B4', 'B5', 'C1', 'C2', 'C3', 'C4', 'C5', 'R2', 'R3', 'R4'];
             
-            return tableOrder.filter(tableKey => {
+            const availableYamaguchi = yamaguchi.filter(tableKey => {
                 return tableGuests[tableKey] && getAvailableGuests(tableKey).length > 0;
             });
+            
+            const availableSeoul = seoul.filter(tableKey => {
+                return tableGuests[tableKey] && getAvailableGuests(tableKey).length > 0;
+            });
+            
+            let result = [];
+            
+            if (availableYamaguchi.length > 0) {
+                result.push({ type: 'header', label: '━━━━ 야마구치 피로연 / 山口披露宴 ━━━━' });
+                result.push(...availableYamaguchi.map(table => ({ type: 'option', value: table })));
+            }
+            
+            if (availableSeoul.length > 0) {
+                result.push({ type: 'header', label: '━━━━ 서울 피로연 / ソウル披露宴 ━━━━' });
+                result.push(...availableSeoul.map(table => ({ type: 'option', value: table })));
+            }
+            
+            return result;
         }
 
         function saveToStorage() {
@@ -808,54 +831,65 @@
                             <p class="subtitle">세이타로 & 지은의 결혼증서 / 誠太郎と智恩の結婚証明書</p>
                         </div>
                         
-                        <!-- 완성 예시 사진 -->
-                        <div class="example-photo">
-                            <img src="./images/sample.png" alt="완성된 결혼증서 예시" class="example-image" />
-                            <p class="example-caption">
-                                여러분 한 분 한 분의 타일이 모여 아름다운 결혼증서가 완성됩니다 ✨
-                                <br />
-                                <span class="text-japanese">皆様お一人お一人のタイルが集まって美しい結婚証明書が完成されます ✨</span>
-                            </p>
-                        </div>
-                        
-                        <div class="space-y-4">
-                            <div class="form-group">
-                                <label class="label">테이블명 / テーブル名</label>
-                                <select class="select" onchange="handleTableChange(this.value)">
-                                    <option value="">테이블을 선택해주세요 / テーブルを選択してください</option>
-                                    ${availableTables.map(table => 
-                                        `<option value="${table}" ${state.currentTable === table ? 'selected' : ''}>${table}</option>`
-                                    ).join('')}
-                                    ${availableTables.length === 0 ? 
-                                        '<option value="" disabled>모든 테이블의 선택이 완료되었습니다 / すべてのテーブルの選択が完了しました</option>' : ''
-                                    }
-                                </select>
+                        <div class="form-content">
+                            <!-- 왼쪽: 완성 예시 사진 -->
+                            <div class="form-left">
+                                <div class="example-photo">
+                                    <img src="./images/sample.png" alt="완성된 결혼증서 예시" class="example-image" />
+                                    <p class="example-caption">
+                                        여러분 한 분 한 분의 타일이 모여 아름다운 결혼증서가 완성됩니다 ✨
+                                        <br />
+                                        <span class="text-japanese">皆様お一人お一人のタイルが集まって美しい結婚証明書が完成されます ✨</span>
+                                    </p>
+                                </div>
                             </div>
                             
-                            <div class="form-group">
-                                <label class="label">성함 / お名前</label>
-                                ${state.currentTable ? `
-                                    <select class="select" onchange="handleNameChange(this.value)">
-                                        <option value="">성함을 선택해주세요 / お名前を選択してください</option>
-                                        ${availableGuests.map(guest => 
-                                            `<option value="${guest}" ${state.currentName === guest ? 'selected' : ''}>${guest}</option>`
-                                        ).join('')}
-                                        ${availableGuests.length === 0 ? 
-                                            '<option value="" disabled>이 테이블의 모든 분이 선택을 완료했습니다 / このテーブルの全員が選択完了しました</option>' : ''
-                                        }
-                                    </select>
-                                ` : `
-                                    <input type="text" class="input" disabled placeholder="먼저 테이블을 선택해주세요 / 先にテーブルを選択してください" />
-                                `}
+                            <!-- 오른쪽: 폼 -->
+                            <div class="form-right">
+                                <div class="space-y-4">
+                                    <div class="form-group">
+                                        <label class="label">테이블명 / テーブル名</label>
+                                        <select class="select" onchange="handleTableChange(this.value)">
+                                            <option value="">테이블을 선택해주세요 / テーブルを選択してください</option>
+                                            ${availableTables.map(item => {
+                                                if (item.type === 'header') {
+                                                    return `<option disabled style="font-weight: bold; color: #6b7280; background: #f3f4f6;">${item.label}</option>`;
+                                                } else {
+                                                    return `<option value="${item.value}" ${state.currentTable === item.value ? 'selected' : ''}>${item.value}</option>`;
+                                                }
+                                            }).join('')}
+                                            ${availableTables.length === 0 ? 
+                                                '<option value="" disabled>모든 테이블의 선택이 완료되었습니다 / すべてのテーブルの選択が完了しました</option>' : ''
+                                            }
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label class="label">성함 / お名前</label>
+                                        ${state.currentTable ? `
+                                            <select class="select" onchange="handleNameChange(this.value)">
+                                                <option value="">성함을 선택해주세요 / お名前を選択してください</option>
+                                                ${availableGuests.map(guest => 
+                                                    `<option value="${guest}" ${state.currentName === guest ? 'selected' : ''}>${guest}</option>`
+                                                ).join('')}
+                                                ${availableGuests.length === 0 ? 
+                                                    '<option value="" disabled>이 테이블의 모든 분이 선택을 완료했습니다 / このテーブルの全員が選択完了しました</option>' : ''
+                                                }
+                                            </select>
+                                        ` : `
+                                            <input type="text" class="input" disabled placeholder="먼저 테이블을 선택해주세요 / 先にテーブルを選択してください" />
+                                        `}
+                                    </div>
+                                    
+                                    <button 
+                                        class="btn btn-primary w-full" 
+                                        onclick="state.showForm = false; render();"
+                                        ${!state.currentTable || !state.currentName ? 'disabled' : ''}
+                                    >
+                                        타일 위치 선택하기 / タイル位置を選択
+                                    </button>
+                                </div>
                             </div>
-                            
-                            <button 
-                                class="btn btn-primary w-full" 
-                                onclick="state.showForm = false; render();"
-                                ${!state.currentTable || !state.currentName ? 'disabled' : ''}
-                            >
-                                타일 위치 선택하기 / タイル位置を選択
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -1084,7 +1118,7 @@
                             
                             <div class="mb-4">
                                 <p class="text-sm text-gray-600">
-                                    선택된 타일: ${getSelectedCount()}개 / 75개 | 選택されたタイル: ${getSelectedCount()}個 / 75個
+                                    선택된 타일: ${getSelectedCount()}개 / 75개 | 選択されたタイル: ${getSelectedCount()}個 / 75個
                                 </p>
                             </div>
 
