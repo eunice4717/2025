@@ -44,6 +44,87 @@
             margin: 80px auto;
         }
         
+        /* 아이패드 최적화 */
+        @media (min-width: 768px) and (max-width: 1024px) {
+            .form-card {
+                max-width: 700px;
+                margin: 40px auto;
+                padding: 40px;
+            }
+            
+            .container {
+                padding: 20px;
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            .title {
+                font-size: 32px;
+                margin-bottom: 12px;
+            }
+            
+            .subtitle {
+                font-size: 18px;
+                margin-bottom: 40px;
+            }
+            
+            .example-photo {
+                margin-bottom: 40px;
+            }
+            
+            .example-image {
+                max-width: 400px;
+            }
+            
+            .example-caption {
+                font-size: 16px;
+            }
+            
+            .text-japanese {
+                font-size: 15px;
+            }
+            
+            .form-group {
+                margin-bottom: 28px;
+            }
+            
+            .label {
+                font-size: 16px;
+                margin-bottom: 10px;
+            }
+            
+            .select, .input {
+                padding: 14px 18px;
+                font-size: 18px;
+            }
+            
+            .btn {
+                padding: 16px 28px;
+                font-size: 18px;
+            }
+            
+            /* 가로 레이아웃으로 공간 효율성 증대 */
+            .form-content {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 40px;
+                align-items: center;
+            }
+            
+            .form-left {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .form-right {
+                display: flex;
+                flex-direction: column;
+            }
+        }
+        
         .title {
             text-align: center;
             font-size: 28px;
@@ -92,6 +173,15 @@
             
             .example-caption {
                 font-size: 13px;
+            }
+            
+            /* 모바일에서는 세로 레이아웃 유지 */
+            .form-content {
+                display: block !important;
+            }
+            
+            .form-left, .form-right {
+                display: block !important;
             }
         }
         
